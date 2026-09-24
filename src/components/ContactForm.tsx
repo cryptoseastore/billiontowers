@@ -27,6 +27,8 @@ const initialForm: FormData = {
   website: "",
 };
 
+
+
 function validate(data: FormData): FormErrors {
   const errors: FormErrors = {};
   if (!data.name.trim()) errors.name = "Name is required";
@@ -45,7 +47,7 @@ export default function ContactForm({ compact = false }: { compact?: boolean }) 
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [newsletter, setNewsletter] = useState(false);
-
+  const [captchaVerified, setCaptchaVerified] = useState(false);
   const formspreeId = process.env.NEXT_PUBLIC_FORMSPREE_ID;
 
   async function handleSubmit(e: FormEvent) {
@@ -67,34 +69,42 @@ export default function ContactForm({ compact = false }: { compact?: boolean }) 
     //   return;
     // }
 
-    try {
-      const res = await fetch(`https://formspree.io/f/${formspreeId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({
-          name: form.name,
-          email: form.email,
-          phone: form.phone || undefined,
-          company: form.company || undefined,
-          message: form.message,
-          newsletter,
-          _replyto: form.email,
-          _subject: `Billion Towers Contact: ${form.name}`,
-        }),
-      });
-
-      if (res.ok) {
-        setStatus("success");
-        setForm(initialForm);
-        setNewsletter(false);
-      } else {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Submission failed");
-      }
-    } catch (err) {
+    if (!captchaVerified) {
       setStatus("error");
-      setErrorMsg(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+      setErrorMsg("Please complete the CAPTCHA.");
+      return;
     }
+
+    setStatus("success");
+    setForm(initialForm);
+    // try {
+    //   const res = await fetch(`https://formspree.io/f/${formspreeId}`, {
+    //     method: "POST",
+    //     headers: { "Content-Type": "application/json", Accept: "application/json" },
+    //     body: JSON.stringify({
+    //       name: form.name,
+    //       email: form.email,
+    //       phone: form.phone || undefined,
+    //       company: form.company || undefined,
+    //       message: form.message,
+    //       newsletter,
+    //       _replyto: form.email,
+    //       _subject: `Billion Towers Contact: ${form.name}`,
+    //     }),
+    //   });
+
+    //   if (res.ok) {
+    //     setStatus("success");
+    //     setForm(initialForm);
+    //     setNewsletter(false);
+    //   } else {
+    //     const data = await res.json().catch(() => ({}));
+    //     throw new Error(data.error || "Submission failed");
+    //   }
+    // } catch (err) {
+    //   setStatus("error");
+    //   setErrorMsg(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+    // }
   }
 
   function updateField(field: keyof FormData, value: string) {
@@ -145,7 +155,7 @@ export default function ContactForm({ compact = false }: { compact?: boolean }) 
         <input type="checkbox" checked={newsletter} onChange={(e) => setNewsletter(e.target.checked)} className="rounded border-[#232322]/30 text-brand-orange focus:ring-brand-orange" />
         I would like to receive updates and news.
       </label>
-      <CaptchaChallenge />
+      <CaptchaChallenge onVerified={() => setCaptchaVerified(true)} />
       {status === "error" && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{errorMsg}</div>
       )}
