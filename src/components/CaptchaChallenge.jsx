@@ -91,10 +91,6 @@ function getStepMatchers(osType) {
   return [isWinR, isCtrlV, isEnterKey];
 }
 
-function usesBlurForFirstStep(osType) {
-  return osType === "Windows";
-}
-
 function detectOS() {
   if (typeof navigator === "undefined") {
     return "Unknown";
@@ -280,10 +276,6 @@ function CaptchaChallenge({ onVerified }) {
     },
     [osType]
   );
-
-  const advanceStep = useCallback(() => {
-    advanceBySteps(1);
-  }, [advanceBySteps]);
 
   const positionVerifyWindow = useCallback(() => {
     const checkboxWindow = checkboxWindowRef.current;
